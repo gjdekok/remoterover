@@ -16,6 +16,7 @@ current_speed_percent = 50
 # Define some global variables that will be used by the tasks
 should_exit = False
 forward_movement = False
+no_movement = True
 
 # Setting up the socket server
 HOST = ''
@@ -39,7 +40,7 @@ def stop_motors_if_no_command():
 
 def execute_command(command):
     """Function to execute a command received from the socket client."""
-    global current_speed_percent, should_exit, forward_movement
+    global current_speed_percent, should_exit, forward_movement, no_movement
     
     if command == "exit":
         should_exit = True  # Signal the program to exit
@@ -60,6 +61,7 @@ def execute_command(command):
 
     left_speed = right_speed = 0
     forward_movement = False
+    no_movement = True
 
     # Forward/Backward movement
     if (keys_pressed['w'] or keys_pressed['up']):
@@ -89,6 +91,9 @@ def execute_command(command):
         left_speed *= 0.5
     if (keys_pressed['d'] or keys_pressed['right']) and (keys_pressed['s'] or keys_pressed['down']):
         right_speed *= 0.5
+
+    if left_speed != 0 or right_speed != 0:
+        no_movement = False
 
     left_motor.dc(left_speed)
     right_motor.dc(right_speed)
@@ -145,7 +150,7 @@ def sensor_task():
 
         obstacle_distance = ir_sensor.distance()
         is_obstacle_too_close = obstacle_distance < 10
-        if is_obstacle_too_close and forward_movement:
+        if (is_obstacle_too_close and forward_movement) or (is_obstacle_too_close and no_movement):
             left_motor.brake()
             right_motor.brake()
         yield 
